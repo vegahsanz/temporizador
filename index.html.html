@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-center mb-6">Timer App</h1>
+        <form id="timerForm" class="space-y-4">
+            <div>
+                <label for="activityTime" class="block text-lg font-medium">Tiempo de actividad (segundos):</label>
+                <input type="number" id="activityTime" class="w-full p-2 rounded bg-gray-700 text-white" required>
+            </div>
+            <div>
+                <label for="restTime" class="block text-lg font-medium">Tiempo de descanso (segundos):</label>
+                <input type="number" id="restTime" class="w-full p-2 rounded bg-gray-700 text-white" required>
+            </div>
+            <div>
+                <label for="seriesCount" class="block text-lg font-medium">Número de series:</label>
+                <input type="number" id="seriesCount" class="w-full p-2 rounded bg-gray-700 text-white" required>
+            </div>
+            <button type="submit" class="w-full py-2 bg-blue-500 hover:bg-blue-600 rounded font-bold">Iniciar</button>
+        </form>
+        <div id="status" class="mt-6 text-center hidden">
+            <h2 class="text-2xl font-bold">Estado:</h2>
+            <p id="currentPhase" class="text-xl mt-2"></p>
+            <p id="seriesInfo" class="text-lg mt-2"></p>
+        </div>
+    </div>
+
+    <!-- Embedding the trimmed audio file -->
+    <audio id="beepSound" preload="auto">
+        <source src="./alarm-clock-short-2s.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        const form = document.getElementById('timerForm');
+        const statusDiv = document.getElementById('status');
+        const currentPhase = document.getElementById('currentPhase');
+        const seriesInfo = document.getElementById('seriesInfo');
+        const beepSound = document.getElementById('beepSound');
+        let interval;
+
+        const playSound = () => {
+            // Ensuring the audio plays from the start
+            beepSound.currentTime = 0;
+            beepSound.play().catch(error => {
+                console.error("Error al reproducir el sonido:", error);
+            });
+        };
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            
+            // Get input values
+            const activityTime = parseInt(document.getElementById('activityTime').value);
+            const restTime = parseInt(document.getElementById('restTime').value);
+            const seriesCount = parseInt(document.getElementById('seriesCount').value);
+
+            // Initialize variables
+            let currentSeries = 0;
+            let isActivity = true;
+            let timeLeft = activityTime;
+
+            // Update UI
+            form.classList.add('hidden');
+            statusDiv.classList.remove('hidden');
+            currentPhase.textContent = `Fase: Actividad (${timeLeft} segundos restantes)`;
+            seriesInfo.textContent = `Series completadas: 0 de ${seriesCount}`;
+
+            // Timer logic
+            const startTimer = () => {
+                interval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        currentPhase.textContent = `Fase: ${isActivity ? 'Actividad' : 'Descanso'} (${timeLeft} segundos restantes)`;
+                    } else {
+                        playSound();
+                        if (isActivity) {
+                            timeLeft = restTime;
+                            isActivity = false;
+                            currentPhase.textContent = `Fase: Descanso (${timeLeft} segundos restantes)`;
+                        } else {
+                            currentSeries++;
+                            seriesInfo.textContent = `Series completadas: ${currentSeries} de ${seriesCount}`;
+                            if (currentSeries === seriesCount) {
+                                clearInterval(interval);
+                                currentPhase.textContent = '¡Circuito completado!';
+                                return;
+                            }
+                            timeLeft = activityTime;
+                            isActivity = true;
+                            currentPhase.textContent = `Fase: Actividad (${timeLeft} segundos restantes)`;
+                        }
+                    }
+                }, 1000);
+            };
+
+            startTimer();
+        });
+    </script>
+</body>
+</html>
